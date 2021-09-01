@@ -3,6 +3,8 @@ FROM nvidia/cuda:9.0-cudnn7-runtime-ubuntu16.04
 RUN apt-get update\
     && apt-get install -y --no-install-recommends \
     wget gcc make zlib1g-dev libssl-dev libopencv-dev \
+    curl git vim \
+    libsqlite3-dev libreadline6-dev libbz2-dev libssl-dev libsqlite3-dev libncursesw5-dev libffi-dev libdb-dev libexpat1-dev zlib1g-dev liblzma-dev libgdbm-dev libmpdec-dev \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -33,5 +35,28 @@ RUN pip install -U pip \
     && pip install scipy==1.1.0 \
     && pip install scikit-image==0.13.0 \
     && pip install scikit-learn==0.22.2 \
-    && pip install -U h5py==2.10.0 \
-    && pip cache purge
+    && pip install -U h5py==2.10.0
+RUN pip cache purge
+
+# 以降JupyterLab3のインストール 
+RUN curl -sL https://deb.nodesource.com/setup_16.x > /tmp/setup.sh
+RUN bash /tmp/setup.sh
+RUN rm /tmp/setup.sh
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends nodejs
+
+RUN pip install 'jupyterlab>=3.0.0,<4.0.0a0' jupyterlab-lsp
+RUN pip install appmode
+RUN jupyter nbextension     enable --py --sys-prefix appmode
+RUN jupyter serverextension enable --py --sys-prefix appmode
+RUN pip install ipycanvas orjson
+
+RUN pip install jupyterlab_vim
+RUN pip install ipyfilechooser
+RUN pip install jupyterlab_widgets
+RUN echo "jupyter lab --no-browser --port=8129 --ip=0.0.0.0 --allow-root --NotebookApp.token=''" > /lab.sh
+RUN chmod +x /lab.sh
+#RUN jupyter labextension install jupyterlab-plotly
+
+#RUN rm -rf /var/lib/apt/lists/*
+#RUN pip cache purge
