@@ -1,6 +1,7 @@
 from model import *
 import numpy as np
-import keras.backend as K
+#import keras.backend as K
+import keras.backend.tensorflow_backend as K
 from keras.models import load_model
 
 
@@ -43,7 +44,9 @@ def go_refine_sparse(x, sparse_matrix):
     return session.run(tf_sparse_op_H, feed_dict={ipsp3: x[:, :, None], ipsp9: sparse_matrix})[:, :, 0]
 
 
-session = tf.Session()
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
 K.set_session(session)
 
 ip3 = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 3))
