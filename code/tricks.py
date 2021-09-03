@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 
-from numba import njit
 from scipy.ndimage import label
 
 
@@ -84,7 +83,6 @@ def topo_compute_normal(dist):
     return normal_map
 
 
-@njit
 def count_all(labeled_array, all_counts):
     M = labeled_array.shape[0]
     N = labeled_array.shape[1]
@@ -96,7 +94,6 @@ def count_all(labeled_array, all_counts):
     return
 
 
-@njit
 def trace_all(labeled_array, xs, ys, cs):
     M = labeled_array.shape[0]
     N = labeled_array.shape[1]
