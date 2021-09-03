@@ -1,5 +1,13 @@
+import cv2
+import sys
+import os
+import pickle
+import numpy as np
+from pathlib import Path
+from PIL import Image
 from tricks import *
 from ai import *
+from tqdm import tqdm
 
 
 def go_flipped_vector(x):
@@ -42,8 +50,10 @@ def up_fill(fills, cur_fill_map):
 
 
 def segment(image):
-    raw_img = go_srcnn(min_resize(image, 512)).clip(0, 255).astype(np.uint8)
-    img_2048 = min_resize(raw_img, 2048)
+#    raw_img = go_srcnn(min_resize(image, 512)).clip(0, 255).astype(np.uint8)
+#    img_2048 = min_resize(raw_img, 2048)
+    raw_img = image
+    img_2048 = image
     height = d_resize(go_transposed_vector(mk_resize(raw_img, 64)), img_2048.shape) * 255.0
     final_height = height.copy()
     height += (height - cv2.GaussianBlur(height, (0, 0), 3.0)) * 10.0
@@ -79,17 +89,40 @@ def segment(image):
     result = np.zeros_like(img_2048, dtype=np.uint8)
     for region_indices in all_region_indices:
         result[region_indices] = np.median(img_2048[region_indices], axis=0)
-    return final_height.clip(0, 255).astype(np.uint8), regions.clip(0, 255).astype(np.uint8), result.clip(0, 255).astype(np.uint8)
+    return {
+        "skeleton": final_height.clip(0, 255).astype(np.uint8),
+        "region": regions.clip(0, 255).astype(np.uint8),
+        "flatten": result.clip(0, 255).astype(np.uint8),
+        "indices": all_region_indices,
+    }
 
+root = Path("/data/natsuki")
+
+def bucket(_id: str) -> str:
+    return _id[-3:].zfill(4)
+
+def prepare(prefix):
+    (root/f"danbooru2020/{prefix}").mkdir(exist_ok=True)
+    for i in range(1000):
+        (root/f"danbooru2020/{prefix}/{str(i).zfill(4)}").mkdir(exist_ok=True)
+
+def fname2id(fname: str) -> str:
+    return str(fname).split("/")[-1].split(".")[0]
+
+def id2fname(_id, prefix="512white", ext=lambda _: "png", bucket=bucket):
+    return str(root/f"danbooru2020/{prefix}/{bucket(_id)}/{_id}.{ext(_id)}")
 
 if __name__=='__main__':
-    import sys
-    image = cv2.imread(sys.argv[1])
-    skeleton, region, flatten = segment(image)
-    cv2.imwrite('./current_skeleton.png', skeleton)
-    cv2.imwrite('./current_region.png', region)
-    cv2.imwrite('./current_flatten.png', flatten)
-    print('./current_skeleton.png')
-    print('./current_region.png')
-    print('./current_flatten.png')
-    print('ok!')
+    for i, fname in enumerate(tqdm(list(map(lambda x: x.strip(), sys.stdin)))):
+        _id = fname2id(fname)
+        img = cv2.imread(fname)
+        seg = segment(img)
+        for prefix, v in seg.items():
+            if i == 0: prepare(prefix)
+            if prefix == "indices":
+                dname = id2fname(_id, prefix=prefix, ext=lambda _:"pkl")
+                with open(dname, "wb") as f:
+                    pickle.dump(v, f)
+            else:
+                dname = id2fname(_id, prefix=prefix, ext=lambda _:"png")
+                cv2.imwrite(dname, v)

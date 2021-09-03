@@ -56,6 +56,8 @@ RUN pip install ipyfilechooser
 RUN pip install jupyterlab_widgets
 RUN echo "jupyter lab --no-browser --port=8129 --ip=0.0.0.0 --allow-root --NotebookApp.token=''" > /lab.sh
 RUN chmod +x /lab.sh
+RUN pip install tqdm
+RUN pip install pudb
 #RUN jupyter labextension install jupyterlab-plotly
 
 #RUN rm -rf /var/lib/apt/lists/*
