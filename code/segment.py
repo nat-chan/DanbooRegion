@@ -8,6 +8,7 @@ from PIL import Image
 from tricks import *
 from ai import *
 from tqdm import tqdm
+import argparse
 
 
 def go_flipped_vector(x):
@@ -113,13 +114,17 @@ def id2fname(_id, prefix="512white", ext=lambda _: "png", bucket=bucket):
     return str(root/f"danbooru2020/{prefix}/{bucket(_id)}/{_id}.{ext(_id)}")
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--prefix', type=str, default="")
+    args = parser.parse_args()
     for i, fname in enumerate(tqdm(list(map(lambda x: x.strip(), sys.stdin)))):
         _id = fname2id(fname)
         img = cv2.imread(fname)
         seg = segment(img)
-        for prefix, v in seg.items():
+        for k, v in seg.items():
+            prefix = "_".join(args.prefix.split()+[k])
             if i == 0: prepare(prefix)
-            if prefix == "indices":
+            if k == "indices":
                 dname = id2fname(_id, prefix=prefix, ext=lambda _:"pkl")
                 with open(dname, "wb") as f:
                     pickle.dump(v, f)
